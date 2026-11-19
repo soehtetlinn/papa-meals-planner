@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>လူနာပြုစုရေး လက်စွဲ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@400;700&family=Noto+Sans+Thai:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#fbf8f3; --card:#ffffff; --ink:#1d1b18; --muted:#5b564e; --line:#e4ddd2;
+    --accent:#1f6f5c; --accent-soft:#e3f1ec; --warn:#b3261e; --warn-soft:#fdecea;
+    --amber:#8a5a00; --amber-soft:#fff3d6; --fs:20px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink)}
+  body{font-family:"Noto Sans Myanmar","Noto Sans Thai","Myanmar Text","Padauk",system-ui,sans-serif;font-size:var(--fs);line-height:1.9;padding-bottom:110px}
+  header{position:sticky;top:0;z-index:5;background:var(--accent);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px}
+  header h1{font-size:1.1em;margin:0;flex:1;line-height:1.5}
+  .clock{font-size:.85em;font-weight:700;background:rgba(255,255,255,.15);padding:4px 10px;border-radius:10px;white-space:nowrap}
+  .fsbtn{background:#fff;color:var(--accent);border:0;border-radius:10px;font-size:.8em;font-weight:700;width:48px;height:44px;cursor:pointer;font-family:inherit}
+  main{max-width:760px;margin:0 auto;padding:16px}
+  section{display:none} section.on{display:block}
+  h2{font-size:1.25em;margin:8px 0 12px;line-height:1.6}
+  h3{font-size:1.05em;margin:22px 0 8px;line-height:1.6}
+  .card{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:14px 16px;margin:0 0 12px}
+  .row{display:grid;grid-template-columns:96px 1fr;gap:12px;align-items:start}
+  .time{font-weight:700;font-size:1.15em;color:var(--accent);line-height:1.5}
+  .feed{background:var(--amber-soft);color:var(--amber);border-radius:10px;padding:4px 10px;font-weight:700;display:inline-block;margin-bottom:6px;line-height:1.7}
+  .tasks{margin:0;padding-left:1.1em}
+  .tasks li{margin:2px 0}
+  .card.now{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+  .card.done{opacity:.5}
+  .badge{display:inline-block;background:var(--accent);color:#fff;font-size:.7em;padding:0 10px;border-radius:999px;margin-left:6px;vertical-align:middle;line-height:1.9}
+  .tick{margin-top:8px;width:100%;min-height:52px;font-family:inherit;font-size:.9em;border-radius:12px;border:2px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+  .card.done .tick{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:700}
+  .note{color:var(--muted);font-size:.9em}
+  table{width:100%;border-collapse:collapse;font-size:.92em;background:#fff;border-radius:12px;overflow:hidden}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;line-height:1.7}
+  th{background:var(--accent-soft)}
+  .total td{font-weight:700;background:#f3efe8}
+  details{background:var(--card);border:2px solid var(--line);border-radius:16px;margin:0 0 12px;overflow:hidden}
+  summary{cursor:pointer;padding:14px 16px;font-weight:700;list-style:none;display:flex;align-items:center;gap:10px;min-height:60px;line-height:1.6}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"＋";margin-left:auto;font-size:1.2em;color:var(--accent)}
+  details[open] summary::after{content:"－"}
+  details .body{padding:0 16px 14px}
+  ol,ul{padding-left:1.3em} li{margin:4px 0}
+  .red{background:var(--warn-soft);border-color:#f2b8b5}
+  .red h3{color:var(--warn);margin-top:4px}
+  .yellow{background:var(--amber-soft);border-color:#f0d48a}
+  .yellow h3{color:var(--amber);margin-top:4px}
+  .big-alert{background:var(--warn);color:#fff;border-radius:16px;padding:14px 16px;font-weight:700;margin-bottom:14px;line-height:1.7}
+  .phone{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--line);padding:8px 0}
+  .phone input{font-family:inherit;font-size:1em;width:55%;border:2px solid var(--line);border-radius:10px;padding:4px 8px}
+  nav{position:fixed;left:0;right:0;bottom:0;z-index:10;background:#fff;border-top:2px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding-bottom:env(safe-area-inset-bottom)}
+  nav button{border:0;background:none;font-family:inherit;padding:8px 2px 10px;cursor:pointer;color:var(--muted);font-size:.72em;line-height:1.5;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:84px}
+  nav button .ic{font-size:1.9em;line-height:1.2}
+  nav button.on{color:var(--accent);font-weight:700;background:var(--accent-soft)}
+  nav button.sos.on{color:var(--warn);background:var(--warn-soft)}
+  .disclaimer{font-size:.85em;color:var(--muted);border-left:4px solid var(--line);padding-left:12px;margin-top:20px}
+
+  .L{display:none} body.l-my .L[data-l=my], body.l-en .L[data-l=en], body.l-th .L[data-l=th]{display:block}
+  .langbar{background:var(--accent);padding:0 16px 10px;display:flex;gap:8px}
+  .langbar button{flex:1;min-height:46px;border-radius:12px;border:2px solid rgba(255,255,255,.6);background:transparent;color:#fff;font-family:inherit;font-size:.85em;font-weight:700;cursor:pointer}
+  .langbar button.on{background:#fff;color:var(--accent);border-color:#fff}
+  .topbar{position:sticky;top:0;z-index:5}
+  header{position:static}
+</style>
+</head>
+<body>
+<div class="topbar">
+<header>
+  <h1 id="ttl">လူနာပြုစုရေး လက်စွဲ</h1>
+  <span class="clock" id="clock">--:--</span>
+  <button class="fsbtn" id="fsDown" aria-label="A-">A−</button>
+  <button class="fsbtn" id="fsUp" aria-label="A+">A+</button>
+</header>
+<div class="langbar" id="langbar">
+  <button data-lang="my">မြန်မာ</button>
+  <button data-lang="en">English</button>
+  <button data-lang="th">ไทย</button>
+</div>
+</div>
+<main>
+<section id="schedule"><div class="L" data-l="my">
+  <h2>⏰ ယနေ့ အချိန်ဇယား</h2>
+  <p class="note">အစိမ်းရောင်ဘောင်ဖြင့် "ယခု" ပြထားသော အကွက်သည် ယခုလုပ်ရမည့်အလုပ် ဖြစ်သည်။ ပြီးလျှင် "ပြီးပြီ" ကို နှိပ်ပါ (နောက်နေ့ အလိုအလျောက် ပြန်စမည်)။</p>
+  <div class="slots"></div>
+  <div class="card">
+    <h3 style="margin-top:0">🌙 ညအစောင့် (22:30 – 06:30)</h3>
+    <ul>
+      <li><b>ခေါင်း 30° အမြဲထားပါ</b> — ခေါင်းကို အပြားမချရ။</li>
+      <li><b>00:00၊ 02:00၊ 04:00</b> — ကိုယ်လှည့်၊ SpO2 ကြည့်၊ အသက်ရှူသံ နားထောင်၊ လည်ပင်းပိုက် ခိုင်မာစွာတပ်ထားမှု စစ်ပါ။</li>
+      <li>Pulse oximeter ရှိလျှင် Alarm ကို <b>SpO2 &lt; 92%</b> တွင် မြည်အောင်ထားပါ။</li>
+      <li>ဂလုတ်ဂလုတ်သံကြားလျှင် Suction လုပ်ပါ။</li>
+      <li>ချွေးပျံ၊ ရှေ့နောက်မသိ ဖြစ်လျှင် DTX စစ်ပါ။</li>
+      <li>အရန် လည်ပင်းပိုက်၊ Obturator၊ ကတ်ကြေး၊ Suction ကို ကုတင်ဘေးတွင် ထားပါ။</li>
+    </ul>
+  </div>
+</div><div class="L" data-l="en">  <h2>⏰ Today's schedule</h2>
+  <p class="note">The card with a green border and a "Now" tag is what to do now. Tap "Done" when finished (it resets automatically the next day).</p>
+  <div class="slots"></div>
+  <div class="card">
+    <h3 style="margin-top:0">🌙 Overnight (22:30 – 06:30)</h3>
+    <ul>
+      <li><b>Keep the head raised 30° at all times</b> — never lay the head flat.</li>
+      <li><b>00:00, 02:00, 04:00</b> — turn the patient, check SpO2, listen to breathing, check the trach tube is secure.</li>
+      <li>If you have a pulse oximeter, set the alarm for <b>SpO2 &lt; 92%</b>.</li>
+      <li>If you hear gurgling, do suction.</li>
+      <li>If sweating or confused, check DTX.</li>
+      <li>Keep a spare trach tube, obturator, scissors and suction at the bedside.</li>
+    </ul>
+  </div>
+</div><div class="L" data-l="th">  <h2>⏰ ตารางวันนี้</h2>
+  <p class="note">การ์ดที่มีกรอบสีเขียวและป้าย "ตอนนี้" คือสิ่งที่ต้องทำตอนนี้ ทำเสร็จแล้วกด "เสร็จแล้ว" (จะเริ่มใหม่อัตโนมัติในวันถัดไป)</p>
+  <div class="slots"></div>
+  <div class="card">
+    <h3 style="margin-top:0">🌙 ช่วงกลางคืน (22:30 – 06:30)</h3>
+    <ul>
+      <li><b>ยกหัวสูง 30° ตลอดเวลา</b> — ห้ามให้นอนราบ</li>
+      <li><b>00:00, 02:00, 04:00</b> — พลิกตัว ดู SpO2 ฟังเสียงหายใจ ตรวจว่าท่อเจาะคอยึดแน่นดี</li>
+      <li>ถ้ามีเครื่องวัดออกซิเจนปลายนิ้ว ให้ตั้งเสียงเตือนเมื่อ <b>SpO2 &lt; 92%</b></li>
+      <li>ถ้าได้ยินเสียงครืดคราด ให้ดูดเสมหะ</li>
+      <li>ถ้าเหงื่อออกมากหรือสับสน ให้ตรวจน้ำตาลปลายนิ้ว (DTX)</li>
+      <li>วางท่อเจาะคอสำรอง ตัวนำท่อ (Obturator) กรรไกร และเครื่องดูดเสมหะไว้ข้างเตียง</li>
+    </ul>
+  </div>
+</div></section>
+<section id="food"><div class="L" data-l="my">
+  <h2>🍲 အစာနှင့် ရေ</h2>
+  <div class="card">
+    <b>တစ်နေ့ ရည်မှန်းချက်</b>
+    <ul>
+      <li>အစာ <b>250 ml × 6 ကြိမ်</b> (3 နာရီတစ်ကြိမ်)</li>
+      <li>ကယ်လိုရီ <b>~1,760 kcal</b> → နောက်ပိုင်း ~2,000</li>
+      <li>ပရိုတိန်း <b>~94 g</b></li>
+      <li>အရည်စုစုပေါင်း <b>~1,980 ml</b></li>
+      <li><b>ကျိုပြီး အခန်းအပူချိန်ရေသာ</b> — ရေခဲရေ လုံးဝမသုံးရ</li>
+      <li>ကိုယ်အလေးချိန် ခွဲစိတ်မီ 70.2 kg → ယခု 62.5 kg။ တစ်ပတ် <b>0.4–0.5 kg</b> တက်ရန်</li>
+    </ul>
+  </div>
+
+  <h3>တစ်နေ့ အစာ ၆ ကြိမ်</h3>
+  <table>
+    <tr><th>အချိန်</th><th>အစာ</th><th>kcal</th></tr>
+    <tr><td>07:00</td><td>Neo-Mune 250 ml</td><td>~255</td></tr>
+    <tr><td>10:00</td><td>Gen-DM MF 250 ml</td><td>~250</td></tr>
+    <tr><td>13:00</td><td>ကြက်သား/ကြက်ဥအကာ စွပ်ပြုတ် 250 ml</td><td>~375</td></tr>
+    <tr><td>16:00</td><td>Neo-Mune 250 ml</td><td>~255</td></tr>
+    <tr><td>19:00</td><td>ကြက်သား/ကြက်ဥအကာ စွပ်ပြုတ် 250 ml</td><td>~375</td></tr>
+    <tr><td>22:00</td><td>Gen-DM MF 250 ml</td><td>~250</td></tr>
+    <tr class="total"><td>စုစုပေါင်း</td><td>1,500 ml</td><td>~1,760</td></tr>
+  </table>
+  <p class="note">အစာတစ်ကြိမ်တိုင်း ရှေ့ ရေ 40 ml၊ နောက် ရေ 40 ml ထည့်ပါ။</p>
+
+  <details>
+    <summary>🥣 Neo-Mune ဖျော်နည်း</summary>
+    <div class="body"><p>မှုန့် <b>7 ဇွန်း (60 g)</b> ကို ရေနွေးနွေး <b>210 ml</b> တွင်ဖျော် → 250 ml ရသည်။ ကျွေးပြီး 2 နာရီအကြာ DTX စစ်ပါ (ပထမပတ်)။ ဖျော်ပြီးသားကို ရေခဲသေတ္တာတွင် 24 နာရီအတွင်း သုံးပါ။</p></div>
+  </details>
+  <details>
+    <summary>🥣 Gen-DM MF ဖျော်နည်း</summary>
+    <div class="body"><p>ဘူးပေါ်ရှိ ဖျော်နည်းအတိုင်း 250 ml ဖျော်ပါ။ ဆီးချိုတည်ငြိမ်စေရန် ညဘက် (22:00) တွင် ကျွေးသည်။</p></div>
+  </details>
+  <details>
+    <summary>🍗 စွပ်ပြုတ်ချက်နည်း (2 ပွဲစာ)</summary>
+    <div class="body"><ol>
+      <li>ကြက်ရင်အုံသား <b>120 g</b> ကို အတုံးလေးများဖြတ်၍ ရေ ~400 ml ဖြင့် 20–25 မိနစ် ကျက်အောင်ပြုတ်ပါ။</li>
+      <li>ရွှေဖရုံသီး <b>60 g</b> နှင့် ထမင်း <b>2 ဇွန်းကြီး</b> ထည့်၍ နူးအောင်ပြုတ်ပါ။</li>
+      <li>ကြက်ဥအကာ <b>4 လုံး</b> ထည့်ပြီး လုံးဝကျက်အောင် ချက်ပါ (အစိမ်းမကျွေးရ)။</li>
+      <li>နွေးရုံအထိအေးလျှင် <b>အားလုံးကို ဘလင်ဒါဖြင့် 2–3 မိနစ် ချေမွပါ</b> — အသားကို အရည်ထဲ ပျော်သွားအောင်။</li>
+      <li>သံလွင်ဆီ <b>4 ဇွန်းကြီး</b> ထည့်ပြီး 30 စက္ကန့် ထပ်ချေပါ။ ဆား အနည်းငယ်သာ။</li>
+      <li>အပေါက်ကျဉ်းဆင်းဖြင့် စစ်ပါ။ ဆင်းပေါ်ကျန် 1–2 ဇွန်းကြီးထက်ပိုလျှင် ထပ်ချေပါ။</li>
+      <li>ဟင်းရည်ဖြင့် 500 ml ဖြစ်အောင်ညှိ၍ 250 ml ပုလင်း 2 လုံး ခွဲထည့်ပါ။</li>
+      <li>ရေခဲသေတ္တာတွင် 24 နာရီအတွင်းသာ သုံးပါ။ ကျွေးခါနီး နွေးရုံ ပြန်နွေးပါ။</li>
+    </ol>
+    <p class="note">ဗိုက်ပွ/လေထိုးလျှင် ဆီကို တစ်ပွဲ 1 ဇွန်းကြီးသို့ ပြန်လျှော့ပါ။ ဖရုံ၊ ထမင်း မပိုပါနှင့် — ဆီးချိုတက်စေသည်။</p></div>
+  </details>
+  <details>
+    <summary>🧪 ပိုက်ဖြင့် ကျွေးနည်း (NG)</summary>
+    <div class="body"><ol>
+      <li>ခေါင်းကို <b>30–45°</b> မြှင့်ပါ။</li>
+      <li>နှာခေါင်းဝရှိ စင်တီမီတာမှတ် ယခင်အတိုင်း ရှိမရှိ ကြည့်ပါ။ ရွေ့သွားလျှင် <b>မကျွေးဘဲ</b> ဆရာဝန်ခေါ်ပါ။ (အဖွဲ့ကသင်ပြထားလျှင်) pH 5.5 နှင့်အောက်ဆိုမှ ကျွေးပါ။ လေမှုတ်နားထောင်နည်း မသုံးရ။</li>
+      <li>ဗိုက်ပျော့မပျော့ ကြည့်ပါ။ ပွနေလျှင် 30–60 မိနစ် စောင့်ပါ။</li>
+      <li>Residual 200 ml ထက်ပိုလျှင် ပြန်ထည့်၍ 1 နာရီစောင့်ပြီး ထပ်စစ်ပါ။</li>
+      <li>ရေ 40 ml ဖြင့် ရှေ့ Flush လုပ်ပါ။</li>
+      <li>Syringe ထဲ <b>လေပူဖောင်း မပါစေရ</b>။</li>
+      <li>250 ml ကို <b>20–30 မိနစ်</b> ကြာအောင် ဖြည်းဖြည်းကျွေးပါ။</li>
+      <li>ချောင်းဆိုးမရပ်၊ အသက်ရှူကြပ်၊ SpO2 ကျလျှင် ချက်ချင်းရပ်ပါ။</li>
+      <li>ရေ 40 ml ဖြင့် နောက် Flush လုပ်၍ ပိတ်ပါ။</li>
+      <li>ကျွေးပြီး <b>45–60 မိနစ်</b> ခေါင်းမြင့်ထားပါ။</li>
+      <li>ဆေးတစ်မျိုးချင်းစီ ရေ 10 ml ခြား၍ ထည့်ပါ။ XR/MR ဆေးပြား မကြိတ်ရ။</li>
+      <li>နှာခေါင်း Tape ကို နေ့စဉ်လဲပြီး ကပ်သည့်နေရာ နည်းနည်းပြောင်းပါ။</li>
+    </ol></div>
+  </details>
+</div><div class="L" data-l="en">  <h2>🍲 Food &amp; fluids</h2>
+  <div class="card">
+    <b>Daily targets</b>
+    <ul>
+      <li>Feeds: <b>250 ml × 6 times</b> (every 3 hours)</li>
+      <li>Calories: <b>~1,760 kcal</b> → later ~2,000</li>
+      <li>Protein: <b>~94 g</b></li>
+      <li>Total fluid: <b>~1,980 ml</b></li>
+      <li><b>Boiled water at room temperature only</b> — never ice water</li>
+      <li>Weight: 70.2 kg before surgery → 62.5 kg now. Aim to gain <b>0.4–0.5 kg</b> a week</li>
+    </ul>
+  </div>
+  <h3>6 feeds a day</h3>
+  <table>
+    <tr><th>Time</th><th>Feed</th><th>kcal</th></tr>
+    <tr><td>07:00</td><td>Neo-Mune 250 ml</td><td>~255</td></tr>
+    <tr><td>10:00</td><td>Gen-DM MF 250 ml</td><td>~250</td></tr>
+    <tr><td>13:00</td><td>Chicken &amp; egg-white soup 250 ml</td><td>~375</td></tr>
+    <tr><td>16:00</td><td>Neo-Mune 250 ml</td><td>~255</td></tr>
+    <tr><td>19:00</td><td>Chicken &amp; egg-white soup 250 ml</td><td>~375</td></tr>
+    <tr><td>22:00</td><td>Gen-DM MF 250 ml</td><td>~250</td></tr>
+    <tr class="total"><td>Total</td><td>1,500 ml</td><td>~1,760</td></tr>
+  </table>
+  <p class="note">Flush 40 ml water before and 40 ml after every feed.</p>
+  <details>
+    <summary>🥣 How to mix Neo-Mune</summary>
+    <div class="body"><p>Mix <b>7 scoops (60 g)</b> of powder into <b>210 ml</b> warm water → makes 250 ml. In the first week, check DTX 2 hours after the feed. Keep mixed formula in the fridge and use within 24 hours.</p></div>
+  </details>
+  <details>
+    <summary>🥣 How to mix Gen-DM MF</summary>
+    <div class="body"><p>Mix 250 ml following the directions on the can. It is given at night (22:00) to keep blood sugar steady.</p></div>
+  </details>
+  <details>
+    <summary>🍗 Soup recipe (2 servings)</summary>
+    <div class="body"><ol>
+      <li>Cut <b>120 g</b> skinless chicken breast into small pieces and boil in ~400 ml water for 20–25 minutes until fully cooked.</li>
+      <li>Add <b>60 g</b> pumpkin and <b>2 tablespoons</b> cooked rice; cook until soft.</li>
+      <li>Add <b>4 egg whites</b> and cook until completely set (never give raw egg).</li>
+      <li>When just warm, <b>blend everything for 2–3 minutes</b> — the meat must dissolve into the liquid.</li>
+      <li>Add <b>4 tablespoons</b> olive oil and blend 30 seconds more. Only a little salt.</li>
+      <li>Strain through a fine sieve. If more than 1–2 tablespoons stay in the sieve, blend again.</li>
+      <li>Top up with broth to 500 ml and divide into two 250 ml bottles.</li>
+      <li>Keep in the fridge and use within 24 hours. Warm to lukewarm before feeding.</li>
+    </ol>
+    <p class="note">If it causes bloating or gas, cut the oil back to 1 tablespoon per serving. Don't add more pumpkin or rice — it raises blood sugar.</p></div>
+  </details>
+  <details>
+    <summary>🧪 How to tube feed (NG)</summary>
+    <div class="body"><ol>
+      <li>Raise the head to <b>30–45°</b>.</li>
+      <li>Check the cm mark at the nostril is the same as before. If the tube has moved, <b>don't feed</b> — call the doctor. (If the team taught you) feed only if the aspirate is pH 5.5 or below. Don't use the air-whoosh test.</li>
+      <li>Check the belly is soft. If bloated, wait 30–60 minutes.</li>
+      <li>If the residual is over 200 ml, put it back, wait 1 hour and check again.</li>
+      <li>Flush with 40 ml water before.</li>
+      <li>Make sure there are <b>no air bubbles</b> in the syringe.</li>
+      <li>Give 250 ml slowly over <b>20–30 minutes</b>.</li>
+      <li>Stop at once if there is non-stop coughing, breathlessness or SpO2 drops.</li>
+      <li>Flush with 40 ml water after, then close the tube.</li>
+      <li>Keep the head raised for <b>45–60 minutes</b> after the feed.</li>
+      <li>Give medicines one at a time with 10 ml water between. Never crush XR/MR tablets.</li>
+      <li>Change the nose tape daily and move it slightly each time.</li>
+    </ol></div>
+  </details>
+</div><div class="L" data-l="th">  <h2>🍲 อาหารและน้ำ</h2>
+  <div class="card">
+    <b>เป้าหมายต่อวัน</b>
+    <ul>
+      <li>อาหาร <b>250 มล. × 6 มื้อ</b> (ทุก 3 ชั่วโมง)</li>
+      <li>พลังงาน <b>~1,760 kcal</b> → ภายหลัง ~2,000</li>
+      <li>โปรตีน <b>~94 กรัม</b></li>
+      <li>น้ำรวมทั้งหมด <b>~1,980 มล.</b></li>
+      <li><b>ใช้น้ำต้มสุกอุณหภูมิห้องเท่านั้น</b> — ห้ามใช้น้ำเย็นจัด</li>
+      <li>น้ำหนักก่อนผ่าตัด 70.2 กก. → ตอนนี้ 62.5 กก. เป้าหมายเพิ่ม <b>0.4–0.5 กก.</b> ต่อสัปดาห์</li>
+    </ul>
+  </div>
+  <h3>อาหาร 6 มื้อต่อวัน</h3>
+  <table>
+    <tr><th>เวลา</th><th>อาหาร</th><th>kcal</th></tr>
+    <tr><td>07:00</td><td>Neo-Mune 250 มล.</td><td>~255</td></tr>
+    <tr><td>10:00</td><td>Gen-DM MF 250 มล.</td><td>~250</td></tr>
+    <tr><td>13:00</td><td>ซุปไก่และไข่ขาว 250 มล.</td><td>~375</td></tr>
+    <tr><td>16:00</td><td>Neo-Mune 250 มล.</td><td>~255</td></tr>
+    <tr><td>19:00</td><td>ซุปไก่และไข่ขาว 250 มล.</td><td>~375</td></tr>
+    <tr><td>22:00</td><td>Gen-DM MF 250 มล.</td><td>~250</td></tr>
+    <tr class="total"><td>รวม</td><td>1,500 มล.</td><td>~1,760</td></tr>
+  </table>
+  <p class="note">ทุกมื้อให้ล้างสายด้วยน้ำ 40 มล. ก่อน และ 40 มล. หลัง</p>
+  <details>
+    <summary>🥣 วิธีชง Neo-Mune</summary>
+    <div class="body"><p>ผงนม <b>7 ช้อน (60 กรัม)</b> ผสมน้ำอุ่น <b>210 มล.</b> → ได้ 250 มล. สัปดาห์แรกให้ตรวจน้ำตาล 2 ชั่วโมงหลังให้อาหาร ที่ชงแล้วเก็บในตู้เย็นและใช้ภายใน 24 ชั่วโมง</p></div>
+  </details>
+  <details>
+    <summary>🥣 วิธีชง Gen-DM MF</summary>
+    <div class="body"><p>ชง 250 มล. ตามวิธีบนกระป๋อง ให้ตอนกลางคืน (22:00) เพื่อช่วยให้น้ำตาลคงที่</p></div>
+  </details>
+  <details>
+    <summary>🍗 วิธีทำซุป (2 มื้อ)</summary>
+    <div class="body"><ol>
+      <li>หั่นอกไก่ไม่ติดหนัง <b>120 กรัม</b> เป็นชิ้นเล็ก ต้มกับน้ำ ~400 มล. 20–25 นาทีจนสุก</li>
+      <li>ใส่ฟักทอง <b>60 กรัม</b> และข้าวสวย <b>2 ช้อนโต๊ะ</b> ต้มจนนิ่ม</li>
+      <li>ใส่ไข่ขาว <b>4 ฟอง</b> ต้มจนสุกทั้งหมด (ห้ามให้ไข่ดิบ)</li>
+      <li>เมื่ออุ่นพอดี <b>ปั่นทั้งหมด 2–3 นาที</b> — ให้เนื้อไก่ละลายเข้าไปในน้ำซุป</li>
+      <li>ใส่น้ำมันมะกอก <b>4 ช้อนโต๊ะ</b> ปั่นต่ออีก 30 วินาที ใส่เกลือเพียงเล็กน้อย</li>
+      <li>กรองด้วยกระชอนตาถี่ ถ้าเหลือกากเกิน 1–2 ช้อนโต๊ะ ให้ปั่นใหม่</li>
+      <li>เติมน้ำซุปให้ได้ 500 มล. แบ่งใส่ขวด 250 มล. 2 ขวด</li>
+      <li>เก็บในตู้เย็นและใช้ภายใน 24 ชั่วโมง อุ่นให้พออุ่นก่อนให้</li>
+    </ol>
+    <p class="note">ถ้าท้องอืดหรือมีลม ให้ลดน้ำมันเหลือ 1 ช้อนโต๊ะต่อมื้อ อย่าเพิ่มฟักทองหรือข้าว — ทำให้น้ำตาลขึ้น</p></div>
+  </details>
+  <details>
+    <summary>🧪 วิธีให้อาหารทางสาย (NG)</summary>
+    <div class="body"><ol>
+      <li>ยกหัวสูง <b>30–45°</b></li>
+      <li>ดูขีดเซนติเมตรที่ปลายจมูกว่าเท่าเดิม ถ้าสายเลื่อน <b>ห้ามให้อาหาร</b> — โทรหาแพทย์ (ถ้าทีมสอนไว้) ให้อาหารเฉพาะเมื่อน้ำที่ดูดได้มี pH 5.5 หรือต่ำกว่า ห้ามใช้วิธีเป่าลมฟังเสียง</li>
+      <li>ตรวจว่าท้องนิ่ม ถ้าท้องอืดให้รอ 30–60 นาที</li>
+      <li>ถ้าอาหารค้างเกิน 200 มล. ให้ใส่กลับ รอ 1 ชั่วโมงแล้วตรวจใหม่</li>
+      <li>ล้างสายด้วยน้ำ 40 มล. ก่อน</li>
+      <li>ระวังอย่าให้มี <b>ฟองอากาศ</b> ในกระบอกฉีดยา</li>
+      <li>ให้ 250 มล. ช้าๆ ใช้เวลา <b>20–30 นาที</b></li>
+      <li>หยุดทันทีถ้าไอไม่หยุด หายใจลำบาก หรือ SpO2 ลดลง</li>
+      <li>ล้างสายด้วยน้ำ 40 มล. หลัง แล้วปิดสาย</li>
+      <li>ยกหัวสูงต่อ <b>45–60 นาที</b> หลังให้อาหาร</li>
+      <li>ให้ยาทีละชนิด ล้างน้ำ 10 มล. คั่น ห้ามบดยาที่เขียนว่า XR/MR</li>
+      <li>เปลี่ยนเทปที่จมูกทุกวัน และขยับตำแหน่งเล็กน้อย</li>
+    </ol></div>
+  </details>
+</div></section>
+<section id="care"><div class="L" data-l="my">
+  <h2>🫁 ပြုစုနည်း</h2>
+  <details>
+    <summary>💨 Nebulizer</summary>
+    <div class="body"><ol>
+      <li>ဆရာဝန်ညွှန်သည့်ဆေး သို့မဟုတ် NSS 0.9% ထည့်ပါ။</li>
+      <li>လူနာကို ထိုင်ပုံထား၍ Trach mask ကို လည်ပင်းပိုက်တွင် တပ်ပါ။ မှုန်ကုန်သည်အထိ (10–15 မိနစ်)။</li>
+      <li>ပြီးလျှင် ချောင်းဆိုးခိုင်း၍ လိုအပ်ပါက Suction လုပ်ပါ။</li>
+      <li>အစာမကျွေးမီ လုပ်ပါ — ကျွေးပြီးချက်ချင်း မလုပ်ရ။</li>
+    </ol></div>
+  </details>
+  <details>
+    <summary>🔧 Suction ဆွဲနည်း</summary>
+    <div class="body"><ol>
+      <li>ဂလုတ်ဂလုတ်သံ၊ သလိပ်မြင်ရ၊ SpO2 ကျမှသာ ဆွဲပါ။</li>
+      <li>လက်ဆေး၍ လက်အိတ်ဝတ်ပါ။ ဖိအား <b>80–120 mmHg</b> (အဖွဲ့ညွှန်ကြားသည့်အတိုင်း)။</li>
+      <li>ဆွဲအား <b>မပေးဘဲ</b> သင်ပြထားသောအနက်အထိသာ ထည့်ပါ။ အတင်းမထိုးရ။</li>
+      <li>လှည့်၍ ဆွဲထုတ်ရင်းသာ ဆွဲအားပေးပါ — <b>တစ်ကြိမ် 5–10 စက္ကန့် အများဆုံး</b>။</li>
+      <li>ကြိမ်ကြား <b>30–60 စက္ကန့်</b> အနားပေးပါ။ <b>3 ကြိမ်ထက် မပိုရ</b>။</li>
+      <li>ပြီးလျှင် SpO2၊ HR ကြည့်ပါ — 1–2 မိနစ်အတွင်း ပြန်ကောင်းရမည်။</li>
+      <li>ပါးစပ် Suction — ပါးဘက်နှင့် ရှေ့သွားဘက်သာ။ <b>Flap ကို လုံးဝမထိရ</b>။</li>
+    </ol></div>
+  </details>
+  <details>
+    <summary>🩹 လည်ပင်းပိုက် သန့်ရှင်းရေး</summary>
+    <div class="body"><ul>
+      <li><b>Inner cannula</b> — တစ်နေ့ 2–3 ကြိမ် ဆေးကြော၍ ပြန်ထည့်ပါ။ <b>Lock ကျသံ ကြားရမည်</b>။</li>
+      <li><b>HME Filter</b> — နေ့စဉ်၊ စိုနေ/ညစ်ပေနေလျှင် ချက်ချင်း လဲပါ။</li>
+      <li><b>ကြိုး</b> — လက်ချောင်း 1 ချောင်း ဝင်ရုံ။ လူ 2 ယောက်ဖြင့် လဲပါ။</li>
+      <li><b>Stoma</b> — တစ်နေ့ 2 ကြိမ် NSS ဖြင့် သုတ်၍ ခြောက်အောင်ထားပါ။</li>
+    </ul>
+    <table>
+      <tr><th>သလိပ်အရောင်</th><th>လုပ်ရမည်</th></tr>
+      <tr><td>ကြည်၊ အဖြူ</td><td>ပုံမှန်</td></tr>
+      <tr><td>ပျစ်ခဲ</td><td>Nebulizer/ရေ တိုးပါ</td></tr>
+      <tr><td>ဝါရင့်/စိမ်း၊ အနံ့ဆိုး</td><td>24 နာရီအတွင်း ဆရာဝန်ပြပါ</td></tr>
+      <tr><td><b>သွေးအနီရဲ၊ အစာအရောင်</b></td><td><b style="color:var(--warn)">အရေးပေါ် ချက်ချင်း</b></td></tr>
+    </table></div>
+  </details>
+  <details>
+    <summary>👄 Flap (အစားထိုးအနာ) စစ်နည်း</summary>
+    <div class="body">
+      <p>တစ်နေ့ <b>3 ကြိမ်အနည်းဆုံး</b> ဓာတ်မီးဖြင့် ကြည့်ပါ။</p>
+      <table>
+        <tr><th>ပုံမှန်</th><th>အန္တရာယ်</th></tr>
+        <tr><td>ပန်းရောင်၊ ယခင်နေ့ကဲ့သို့</td><td>ဖြူဖွေး၊ ခရမ်း၊ မည်း</td></tr>
+        <tr><td>နွေးသည်</td><td>အေးစက်သည်</td></tr>
+        <tr><td>ပျော့၊ ဖောင်းမလာ</td><td>မာတင်း၊ ရုတ်တရက်ဖောလာ</td></tr>
+        <tr><td>သွေးမထွက်</td><td>သွေး၊ ပြည်၊ အနံ့ဆိုး</td></tr>
+      </table>
+      <ul>
+        <li>လည်ပင်းကို ဖိသောကြိုး၊ အင်္ကျီ မသုံးရ။</li>
+        <li>ဘယ်ဘက်စောင်းအိပ်ခြင်း — ခွဲစိတ်ဆရာဝန် ခွင့်ပြုမှသာ။</li>
+        <li>ပါးစပ်ကို NSS စပျံ့တံဖြင့် ဖြည်းဖြည်းသုတ်ပါ။ Flap ကို မပွတ်ရ။</li>
+      </ul>
+    </div>
+  </details>
+  <details>
+    <summary>🔄 ကိုယ်လှည့်ခြင်း</summary>
+    <div class="body"><ul>
+      <li><b>2 နာရီတစ်ကြိမ်</b> — ပက်လက် / ညာစောင်း / (ခွင့်ပြုလျှင်) ဘယ်စောင်း။ ခေါင်း 30° အမြဲ။</li>
+      <li>တင်ပါး၊ ဖနောင့်၊ တံတောင်ဆစ်၊ နားရွက်နောက် နီရဲမနေလား ကြည့်ပါ။</li>
+      <li>ခြေသလုံးအောက် ခေါင်းအုံးထား၍ ဖနောင့် ကုတင်နှင့်မထိစေရ။</li>
+    </ul></div>
+  </details>
+  <details>
+    <summary>💪 ကြွက်သား လေ့ကျင့်ခန်း</summary>
+    <div class="body">
+      <p><b>စရန်:</b> HR 50–110၊ အပေါ် BP ≥ 100၊ SpO2 ≥ 95%၊ မဖျား၊ အစာကျွေးပြီး 1 နာရီကျော်။</p>
+      <p style="color:var(--warn)"><b>ချက်ချင်းရပ်:</b> SpO2 &lt; 92%၊ HR &gt; 120၊ မူးဝေ၊ ချွေးပျံ၊ ရင်ဘတ်နာ၊ အသက်ရှူခက်၊ Flap သွေးထွက်။</p>
+      <ol>
+        <li><b>အဆင့် 1</b> — ပြုစုသူက လှုပ်ပေး: ခြေမျက်စိ၊ ဒူး၊ တင်ပါးဆစ်၊ လက်မောင်း၊ တံတောင်၊ လက်ချောင်း — တစ်ခု 10 ကြိမ်။</li>
+        <li><b>အဆင့် 2</b> — ကိုယ်တိုင်: ခြေဖဝါးအပေါ်/အောက် 15 ကြိမ်၊ ခြေထောက်မြှင့်၊ တင်ပါးကြွ၊ ဘောလုံးဆုပ်။</li>
+        <li><b>အဆင့် 3</b> — ကုတင်ဘေး 5–10 မိနစ်ထိုင်၊ အကူဖြင့်ရပ်၊ အခန်းထဲ 2–5 မိနစ်လမ်းလျှောက်။</li>
+        <li><b>ပခုံး</b> — အနာမကျိုင်အတွင်း ဖြည်းဖြည်းလှည့်၊ Physiotherapist နှင့် တိုင်ပင်ပါ။</li>
+      </ol>
+    </div>
+  </details>
+</div><div class="L" data-l="en">  <h2>🫁 Care guide</h2>
+  <details>
+    <summary>💨 Nebulizer</summary>
+    <div class="body"><ol>
+      <li>Add the prescribed medicine or NSS 0.9%.</li>
+      <li>Sit the patient up and attach the trach mask to the trach tube. Run until the mist stops (10–15 minutes).</li>
+      <li>Then ask the patient to cough; suction if needed.</li>
+      <li>Do it before feeds — not right after a feed.</li>
+    </ol></div>
+  </details>
+  <details>
+    <summary>🔧 How to suction</summary>
+    <div class="body"><ol>
+      <li>Only suction for gurgling, visible secretions or a drop in SpO2.</li>
+      <li>Wash hands and wear gloves. Pressure <b>80–120 mmHg</b> (as the team instructed).</li>
+      <li>Insert <b>without</b> suction, only to the depth you were taught. Never force it.</li>
+      <li>Apply suction only while rotating and pulling out — <b>5–10 seconds max</b> each time.</li>
+      <li>Rest <b>30–60 seconds</b> between passes. <b>No more than 3 passes</b>.</li>
+      <li>Afterwards check SpO2 and HR — they should recover within 1–2 minutes.</li>
+      <li>Mouth suction — cheek side and front teeth only. <b>Never touch the flap</b>.</li>
+    </ol></div>
+  </details>
+  <details>
+    <summary>🩹 Trach tube cleaning</summary>
+    <div class="body"><ul>
+      <li><b>Inner cannula</b> — clean and refit 2–3 times a day. <b>You must hear it click and lock</b>.</li>
+      <li><b>HME filter</b> — change daily, or at once if wet or dirty.</li>
+      <li><b>Ties</b> — one finger should fit underneath. Change them with 2 people.</li>
+      <li><b>Stoma</b> — clean with NSS twice a day and keep dry.</li>
+    </ul>
+    <table>
+      <tr><th>Sputum colour</th><th>What to do</th></tr>
+      <tr><td>Clear, white</td><td>Normal</td></tr>
+      <tr><td>Thick, sticky</td><td>More nebulizer / fluids</td></tr>
+      <tr><td>Dark yellow/green, smelly</td><td>See the doctor within 24 hours</td></tr>
+      <tr><td><b>Bright red blood, food-coloured</b></td><td><b style="color:var(--warn)">Emergency now</b></td></tr>
+    </table></div>
+  </details>
+  <details>
+    <summary>👄 Checking the flap</summary>
+    <div class="body">
+      <p>Look with a torch <b>at least 3 times a day</b>.</p>
+      <table>
+        <tr><th>Normal</th><th>Danger</th></tr>
+        <tr><td>Pink, same as yesterday</td><td>Pale white, purple, dark</td></tr>
+        <tr><td>Warm</td><td>Cold</td></tr>
+        <tr><td>Soft, not swelling</td><td>Hard, tense, sudden swelling</td></tr>
+        <tr><td>No bleeding</td><td>Blood, pus, bad smell</td></tr>
+      </table>
+      <ul>
+        <li>No ties or clothes that press on the neck.</li>
+        <li>Lying on the left side — only if the surgeon allows.</li>
+        <li>Wipe the mouth gently with NSS swabs. Never rub the flap.</li>
+      </ul>
+    </div>
+  </details>
+  <details>
+    <summary>🔄 Turning</summary>
+    <div class="body"><ul>
+      <li><b>Every 2 hours</b> — back / right side / (left side if allowed). Head at 30° always.</li>
+      <li>Check the buttocks, heels, elbows and behind the ears for redness.</li>
+      <li>Put a pillow under the calves so the heels don't touch the bed.</li>
+    </ul></div>
+  </details>
+  <details>
+    <summary>💪 Muscle exercises</summary>
+    <div class="body">
+      <p><b>Start only if:</b> HR 50–110, top BP ≥ 100, SpO2 ≥ 95%, no fever, more than 1 hour after a feed.</p>
+      <p style="color:var(--warn)"><b>Stop at once if:</b> SpO2 &lt; 92%, HR &gt; 120, dizziness, sweating, chest pain, breathlessness, flap bleeding.</p>
+      <ol>
+        <li><b>Level 1</b> — caregiver moves the joints: ankles, knees, hips, shoulders, elbows, fingers — 10 times each.</li>
+        <li><b>Level 2</b> — patient moves alone: ankle pumps 15 times, leg raises, bridging, squeezing a ball.</li>
+        <li><b>Level 3</b> — sit on the bed edge 5–10 minutes, stand with help, walk 2–5 minutes in the room.</li>
+        <li><b>Shoulders</b> — gentle rolls within comfort; check with a physiotherapist.</li>
+      </ol>
+    </div>
+  </details>
+</div><div class="L" data-l="th">  <h2>🫁 วิธีดูแล</h2>
+  <details>
+    <summary>💨 การพ่นยา (Nebulizer)</summary>
+    <div class="body"><ol>
+      <li>ใส่ยาตามแพทย์สั่ง หรือน้ำเกลือ NSS 0.9%</li>
+      <li>ให้ผู้ป่วยนั่ง ต่อหน้ากากเข้ากับท่อเจาะคอ พ่นจนหมด (10–15 นาที)</li>
+      <li>จากนั้นให้ไอ และดูดเสมหะถ้าจำเป็น</li>
+      <li>ทำก่อนให้อาหาร — ไม่ทำทันทีหลังให้อาหาร</li>
+    </ol></div>
+  </details>
+  <details>
+    <summary>🔧 วิธีดูดเสมหะ</summary>
+    <div class="body"><ol>
+      <li>ดูดเฉพาะเมื่อมีเสียงครืดคราด เห็นเสมหะ หรือ SpO2 ลดลง</li>
+      <li>ล้างมือและใส่ถุงมือ แรงดูด <b>80–120 mmHg</b> (ตามที่ทีมแนะนำ)</li>
+      <li>สอดสาย <b>โดยไม่เปิดแรงดูด</b> ลึกเท่าที่ได้รับการสอนเท่านั้น ห้ามดันแรง</li>
+      <li>เปิดแรงดูดขณะหมุนและดึงสายออกเท่านั้น — <b>ไม่เกิน 5–10 วินาที</b> ต่อครั้ง</li>
+      <li>พัก <b>30–60 วินาที</b> ระหว่างครั้ง <b>ไม่เกิน 3 ครั้ง</b></li>
+      <li>หลังดูด ดู SpO2 และชีพจร — ควรกลับเป็นปกติใน 1–2 นาที</li>
+      <li>ดูดในปาก — เฉพาะข้างแก้มและฟันหน้า <b>ห้ามแตะแผล Flap</b></li>
+    </ol></div>
+  </details>
+  <details>
+    <summary>🩹 การทำความสะอาดท่อเจาะคอ</summary>
+    <div class="body"><ul>
+      <li><b>ท่อด้านใน</b> — ล้างและใส่กลับวันละ 2–3 ครั้ง <b>ต้องได้ยินเสียงล็อก "คลิก"</b></li>
+      <li><b>ตัวกรอง HME</b> — เปลี่ยนทุกวัน หรือทันทีถ้าเปียกหรือสกปรก</li>
+      <li><b>สายผูก</b> — สอดนิ้วได้ 1 นิ้ว เปลี่ยนโดยใช้คน 2 คน</li>
+      <li><b>รูเจาะคอ</b> — เช็ดด้วยน้ำเกลือวันละ 2 ครั้ง และให้แห้ง</li>
+    </ul>
+    <table>
+      <tr><th>สีเสมหะ</th><th>สิ่งที่ต้องทำ</th></tr>
+      <tr><td>ใส ขาว</td><td>ปกติ</td></tr>
+      <tr><td>เหนียวข้น</td><td>พ่นยา/ให้น้ำเพิ่ม</td></tr>
+      <tr><td>เหลืองเข้ม/เขียว มีกลิ่น</td><td>พบแพทย์ภายใน 24 ชั่วโมง</td></tr>
+      <tr><td><b>เลือดแดงสด สีเหมือนอาหาร</b></td><td><b style="color:var(--warn)">ฉุกเฉินทันที</b></td></tr>
+    </table></div>
+  </details>
+  <details>
+    <summary>👄 การตรวจแผล Flap</summary>
+    <div class="body">
+      <p>ส่องไฟฉายดู <b>อย่างน้อยวันละ 3 ครั้ง</b></p>
+      <table>
+        <tr><th>ปกติ</th><th>อันตราย</th></tr>
+        <tr><td>สีชมพู เหมือนเมื่อวาน</td><td>ซีดขาว ม่วง ดำคล้ำ</td></tr>
+        <tr><td>อุ่น</td><td>เย็น</td></tr>
+        <tr><td>นิ่ม ไม่บวม</td><td>แข็งตึง บวมขึ้นทันที</td></tr>
+        <tr><td>ไม่มีเลือด</td><td>เลือด หนอง กลิ่นเหม็น</td></tr>
+      </table>
+      <ul>
+        <li>ห้ามใช้สายหรือเสื้อที่รัดคอ</li>
+        <li>นอนตะแคงซ้าย — เฉพาะเมื่อศัลยแพทย์อนุญาต</li>
+        <li>เช็ดปากเบาๆ ด้วยไม้พันสำลีชุบน้ำเกลือ ห้ามถูแผล Flap</li>
+      </ul>
+    </div>
+  </details>
+  <details>
+    <summary>🔄 การพลิกตัว</summary>
+    <div class="body"><ul>
+      <li><b>ทุก 2 ชั่วโมง</b> — นอนหงาย / ตะแคงขวา / (ตะแคงซ้ายถ้าได้รับอนุญาต) หัวสูง 30° ตลอด</li>
+      <li>ดูก้น ส้นเท้า ข้อศอก และหลังใบหูว่ามีรอยแดงหรือไม่</li>
+      <li>วางหมอนใต้น่อง ไม่ให้ส้นเท้าแตะเตียง</li>
+    </ul></div>
+  </details>
+  <details>
+    <summary>💪 การออกกำลังกล้ามเนื้อ</summary>
+    <div class="body">
+      <p><b>เริ่มได้เมื่อ:</b> ชีพจร 50–110, ความดันตัวบน ≥ 100, SpO2 ≥ 95%, ไม่มีไข้, หลังให้อาหารเกิน 1 ชั่วโมง</p>
+      <p style="color:var(--warn)"><b>หยุดทันทีถ้า:</b> SpO2 &lt; 92%, ชีพจร &gt; 120, เวียนหัว, เหงื่อออก, เจ็บหน้าอก, หายใจลำบาก, แผล Flap มีเลือด</p>
+      <ol>
+        <li><b>ระดับ 1</b> — ผู้ดูแลขยับข้อให้: ข้อเท้า เข่า สะโพก ไหล่ ข้อศอก นิ้ว — อย่างละ 10 ครั้ง</li>
+        <li><b>ระดับ 2</b> — ผู้ป่วยทำเอง: กระดกข้อเท้า 15 ครั้ง ยกขา ยกก้น บีบลูกบอล</li>
+        <li><b>ระดับ 3</b> — นั่งขอบเตียง 5–10 นาที ยืนโดยมีคนช่วย เดินในห้อง 2–5 นาที</li>
+        <li><b>ไหล่</b> — หมุนเบาๆ ในระดับที่ไม่เจ็บ ปรึกษานักกายภาพบำบัด</li>
+      </ol>
+    </div>
+  </details>
+</div></section>
+<section id="sos"><div class="L" data-l="my">
+  <h2>🚨 အရေးပေါ်</h2>
+  <div class="big-alert">အနီရောင် လက္ခဏာ တစ်ခုခုတွေ့လျှင် — စောင့်မကြည့်ဘဲ အရေးပေါ်ကားခေါ်ပါ သို့မဟုတ် ဆေးရုံ ER သို့ ချက်ချင်းသွားပါ။</div>
+  <div class="card red">
+    <h3>🔴 ချက်ချင်း ER သို့</h3>
+    <ul>
+      <li><b>SpO2 &lt; 92%</b> — Suction ပြီးလည်း မတက်၊ အသက်ရှူခက်၊ နှုတ်ခမ်းပြာ</li>
+      <li><b>လည်ပင်းပိုက် ကျွတ်/ပိတ်</b> — Catheter ထည့်မရ</li>
+      <li><b>BP ≤ 90 နှင့် HR &gt; 110</b>၊ မူးဝေ၊ ချွေးအေးပျံ</li>
+      <li><b>Flap</b> ဖြူဖွေး/ခရမ်း/မည်း/အေးစက်/ရုတ်တရက်ဖော</li>
+      <li>လည်ပင်းပိုက်၊ ပါးစပ်၊ အနာမှ <b>သွေးအနီရဲ</b> စီး</li>
+      <li>ဗိုက်မာတင်းနာ၊ အကြိမ်ကြိမ်အန်၊ <b>လည်ပင်းပိုက်မှ အစာအရောင်သလိပ်</b></li>
+      <li>DTX <b>&lt; 4</b> ကုသပြီး မတက်၊ သို့မဟုတ် <b>&gt; 20</b></li>
+      <li>ရင်ဘတ်နာ၊ ခြေသလုံးတစ်ဘက် ဖော/နာ၊ တက်ခြင်း၊ သတိလစ်</li>
+      <li>အဖျား <b>≥ 38.5°C</b> နှင့် ချမ်းတုန်</li>
+    </ul>
+  </div>
+  <div class="card yellow">
+    <h3>🟡 24 နာရီအတွင်း ဆရာဝန်ခေါ်</h3>
+    <ul>
+      <li>အဖျား 37.8–38.4°C ဆက်တိုက်၊ သလိပ် ဝါ/စိမ်း/အနံ့ဆိုး</li>
+      <li>Residual &gt; 200 ml 2 ကြိမ်၊ ဝမ်းလျှော တစ်နေ့ 3 ကြိမ်ကျော်၊ 3 ရက် ဝမ်းမသွား</li>
+      <li>DTX &gt; 13 ဆက်တိုက် 2 ကြိမ်</li>
+      <li>အစာပိုက် ပိတ်/ရွေ့</li>
+      <li>ဆီးနည်း/ရင့်၊ ကိုယ်အလေးချိန် 2 ပတ်ဆက်ကျ</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">🍬 ဆီးချိုကျလျှင် (DTX &lt; 4)</h3>
+    <ol>
+      <li>သတိရှိ၊ အန်ခြင်းမရှိလျှင် <b>သကြား 3–4 လက်ဖက်ရည်ဇွန်း</b> ကို ရေနွေး 50 ml တွင်ဖျော်၍ ပိုက်မှထည့်၊ ရေ 20 ml Flush။</li>
+      <li>15 မိနစ်အကြာ ထပ်စစ်။ 4 အောက်ဆဲဆိုလျှင် ထပ်လုပ်။</li>
+      <li>ပြန်တက်လျှင် ထိုနေ့တွင်း ဆရာဝန်ကို ပြောပါ (ဆေးပြားပမာဏ ပြင်ရန်)။</li>
+      <li>သတိမရှိ/တက်လျှင် အရေးပေါ်ကား ချက်ချင်း။</li>
+    </ol>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">📞 ဖုန်းနံပါတ်များ</h3>
+    <p class="note">နံပါတ်ရိုက်ထည့်ထားပါ — ဤဖုန်း/ကွန်ပျူတာ တွင်သာ မှတ်ထားမည်။</p>
+    <div class="phones"></div>
+  </div>
+  <p class="disclaimer">ဤလက်စွဲသည် ယေဘုယျလမ်းညွှန်သာဖြစ်ပြီး ဆရာဝန်၏ ညွှန်ကြားချက်ကို အစားမထိုးပါ။ ကွဲလွဲပါက ဆရာဝန်၏ ညွှန်ကြားချက်ကိုသာ လိုက်နာပါ။</p>
+</div><div class="L" data-l="en">  <h2>🚨 Emergency</h2>
+  <div class="big-alert">If you see any red sign — don't wait. Call an ambulance or go to the hospital ER now.</div>
+  <div class="card red">
+    <h3>🔴 Go to ER now</h3>
+    <ul>
+      <li><b>SpO2 &lt; 92%</b> — not improving after suction, hard breathing, blue lips</li>
+      <li><b>Trach tube out or blocked</b> — catheter won't pass</li>
+      <li><b>BP ≤ 90 with HR &gt; 110</b>, dizzy, cold sweat</li>
+      <li><b>Flap</b> pale / purple / dark / cold / suddenly swollen</li>
+      <li><b>Bright red bleeding</b> from the trach, mouth or wound</li>
+      <li>Hard painful belly, repeated vomiting, <b>food-coloured secretions from the trach</b></li>
+      <li>DTX <b>&lt; 4</b> not rising after treatment, or <b>&gt; 20</b></li>
+      <li>Chest pain, one calf swollen/painful, seizure, unconscious</li>
+      <li>Fever <b>≥ 38.5°C</b> with shivering</li>
+    </ul>
+  </div>
+  <div class="card yellow">
+    <h3>🟡 Call the doctor within 24 hours</h3>
+    <ul>
+      <li>Fever 37.8–38.4°C that continues; yellow/green/smelly sputum</li>
+      <li>Residual &gt; 200 ml twice; diarrhoea over 3 times a day; no stool for 3 days</li>
+      <li>DTX &gt; 13 twice in a row</li>
+      <li>Feeding tube blocked or moved</li>
+      <li>Little or dark urine; weight falling 2 weeks in a row</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">🍬 Low blood sugar (DTX &lt; 4)</h3>
+    <ol>
+      <li>If awake and not vomiting, dissolve <b>3–4 teaspoons of sugar</b> in 50 ml warm water, give via the tube, flush 20 ml.</li>
+      <li>Recheck after 15 minutes. If still under 4, repeat.</li>
+      <li>Once it rises, tell the doctor the same day (the tablet dose may need changing).</li>
+      <li>If unconscious or seizing, call an ambulance at once.</li>
+    </ol>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">📞 Phone numbers</h3>
+    <p class="note">Type the numbers in — they are saved only on this phone/computer.</p>
+    <div class="phones"></div>
+  </div>
+  <p class="disclaimer">This guide is general advice only and does not replace the doctor's instructions. If they differ, follow the doctor.</p>
+</div><div class="L" data-l="th">  <h2>🚨 ฉุกเฉิน</h2>
+  <div class="big-alert">ถ้าพบอาการสีแดงข้อใดข้อหนึ่ง — อย่ารอ เรียกรถพยาบาล (1669) หรือไปห้องฉุกเฉินทันที</div>
+  <div class="card red">
+    <h3>🔴 ไปห้องฉุกเฉินทันที</h3>
+    <ul>
+      <li><b>SpO2 &lt; 92%</b> — ดูดเสมหะแล้วไม่ดีขึ้น หายใจลำบาก ริมฝีปากเขียว</li>
+      <li><b>ท่อเจาะคอหลุดหรืออุดตัน</b> — สอดสายดูดไม่ได้</li>
+      <li><b>ความดันตัวบน ≤ 90 และชีพจร &gt; 110</b> เวียนหัว เหงื่อเย็น</li>
+      <li><b>แผล Flap</b> ซีด / ม่วง / ดำ / เย็น / บวมขึ้นทันที</li>
+      <li><b>เลือดแดงสด</b> ออกจากท่อเจาะคอ ปาก หรือแผล</li>
+      <li>ท้องแข็งปวด อาเจียนซ้ำ <b>เสมหะจากท่อเจาะคอมีสีเหมือนอาหาร</b></li>
+      <li>น้ำตาล <b>&lt; 4</b> แก้แล้วไม่ขึ้น หรือ <b>&gt; 20</b></li>
+      <li>เจ็บหน้าอก น่องข้างเดียวบวม/ปวด ชัก หมดสติ</li>
+      <li>ไข้ <b>≥ 38.5°C</b> ร่วมกับหนาวสั่น</li>
+    </ul>
+  </div>
+  <div class="card yellow">
+    <h3>🟡 โทรหาแพทย์ภายใน 24 ชั่วโมง</h3>
+    <ul>
+      <li>ไข้ 37.8–38.4°C ต่อเนื่อง เสมหะเหลือง/เขียว/มีกลิ่น</li>
+      <li>อาหารค้าง &gt; 200 มล. 2 ครั้ง ท้องเสียเกินวันละ 3 ครั้ง ไม่ถ่าย 3 วัน</li>
+      <li>น้ำตาล &gt; 13 ติดกัน 2 ครั้ง</li>
+      <li>สายให้อาหารอุดตันหรือเลื่อน</li>
+      <li>ปัสสาวะน้อยหรือสีเข้ม น้ำหนักลดติดกัน 2 สัปดาห์</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">🍬 น้ำตาลต่ำ (DTX &lt; 4)</h3>
+    <ol>
+      <li>ถ้ารู้สึกตัวและไม่อาเจียน ละลาย <b>น้ำตาล 3–4 ช้อนชา</b> ในน้ำอุ่น 50 มล. ให้ทางสาย แล้วล้างสาย 20 มล.</li>
+      <li>ตรวจซ้ำหลัง 15 นาที ถ้ายังต่ำกว่า 4 ให้ทำซ้ำ</li>
+      <li>เมื่อน้ำตาลขึ้นแล้ว แจ้งแพทย์ภายในวันนั้น (อาจต้องปรับขนาดยาเม็ด)</li>
+      <li>ถ้าหมดสติหรือชัก เรียกรถพยาบาลทันที</li>
+    </ol>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">📞 เบอร์โทรศัพท์</h3>
+    <p class="note">พิมพ์เบอร์ไว้ — บันทึกเฉพาะในโทรศัพท์/คอมพิวเตอร์เครื่องนี้</p>
+    <div class="phones"></div>
+  </div>
+  <p class="disclaimer">คู่มือนี้เป็นคำแนะนำทั่วไปเท่านั้น ไม่ใช้แทนคำสั่งแพทย์ หากขัดกัน ให้ทำตามแพทย์</p>
+</div></section>
+</main>
+<nav id="nav">
+  <button data-tab="schedule"><span class="ic">⏰</span><span class="nl" data-k="schedule"></span></button>
+  <button data-tab="food"><span class="ic">🍲</span><span class="nl" data-k="food"></span></button>
+  <button data-tab="care"><span class="ic">🫁</span><span class="nl" data-k="care"></span></button>
+  <button data-tab="sos" class="sos"><span class="ic">🚨</span><span class="nl" data-k="sos"></span></button>
+</nav>
+<script>
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v===null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+
+const UI = {
+  my: { title:"လူနာပြုစုရေး လက်စွဲ", now:"ယခု", tick:"ပြီးပြီ ဟု နှိပ်ပါ", done:"✔ ပြီးပြီ",
+        nav:{schedule:"အချိန်ဇယား", food:"အစာ", care:"ပြုစုနည်း", sos:"အရေးပေါ်"},
+        phones:["ခွဲစိတ်ဆရာဝန်","အာဟာရပညာရှင်","ဆီးချိုဆရာဝန်","ဆေးရုံ ER","လူနာတင်ယာဉ်"] },
+  en: { title:"Home Care Guide", now:"Now", tick:"Tap when done", done:"✔ Done",
+        nav:{schedule:"Schedule", food:"Food", care:"Care", sos:"Emergency"},
+        phones:["Surgeon","Dietitian","Diabetes doctor","Hospital ER","Ambulance"] },
+  th: { title:"คู่มือดูแลผู้ป่วย", now:"ตอนนี้", tick:"กดเมื่อทำเสร็จ", done:"✔ เสร็จแล้ว",
+        nav:{schedule:"ตารางเวลา", food:"อาหาร", care:"วิธีดูแล", sos:"ฉุกเฉิน"},
+        phones:["ศัลยแพทย์","นักโภชนาการ","แพทย์เบาหวาน","ห้องฉุกเฉิน","รถพยาบาล (1669)"] }
+};
+
+const TIMES = ["06:30","07:00","08:00","09:00","09:30","10:00","11:00","12:00","12:45","13:00","14:00","15:00","16:00","17:30","18:00","18:45","19:00","20:00","21:00","21:45","22:00","22:30"];
+
+const SLOTS = {
+  my: [
+    ["", ["Vitals (BP, HR, SpO2, အပူချိန်)", "DTX — အစာမကျွေးမီ", "Nebulizer → လိုလျှင် Suction", "Inner cannula ဆေးကြော", "ပါးစပ်သန့်ရှင်းရေး", "(တစ်ပတ်တစ်ကြိမ်) ကိုယ်အလေးချိန်"]],
+    ["အစာ ၁ — Neo-Mune 250 ml", ["ရေ 40 ml ရှေ့ / 40 ml နောက်", "ဗိုက်ပွ / Residual စစ်", "ခေါင်း 30–45°", "မနက်ဆေးများ"]],
+    ["", ["ခေါင်းမြင့်ထား (45–60 မိနစ်)", "ကိုယ်လှည့်"]],
+    ["", ["DTX — ပထမပတ်သာ", "Flap စစ် (၁)", "Stoma သန့်ရှင်း၊ Gauze လဲ", "ကိုယ်သုတ်သင်"]],
+    ["", ["လေ့ကျင့်ခန်း (၁) 10–15 မိနစ် — Vitals တည်ငြိမ်မှသာ"]],
+    ["အစာ ၂ — Gen-DM MF 250 ml", ["ရေ 40 / 40 ml", "ဗိုက်ပွ / Residual စစ်", "ခေါင်း 30–45°"]],
+    ["လိုလျှင် ရေ 50–100 ml", ["ကိုယ်လှည့်", "အနားယူ"]],
+    ["", ["Vitals (၂)", "Nebulizer (၂) → Suction"]],
+    ["", ["DTX — အစာမကျွေးမီ"]],
+    ["အစာ ၃ — စွပ်ပြုတ် 250 ml", ["ရေ 40 / 40 ml", "ဗိုက်ပွ / Residual စစ်", "ခေါင်း 30–45°"]],
+    ["", ["ပါးစပ်သန့်ရှင်းရေး (၂)", "ကိုယ်လှည့်", "Flap စစ် (၂)"]],
+    ["", ["လေ့ကျင့်ခန်း (၂) — ကုတင်ဘေးထိုင် / အကူဖြင့် လမ်းလျှောက်"]],
+    ["အစာ ၄ — Neo-Mune 250 ml", ["ရေ 40 / 40 ml", "ဗိုက်ပွ / Residual စစ်", "ခေါင်း 30–45°"]],
+    ["", ["Nebulizer (၃) → Suction", "Inner cannula ဆေးကြော (၂)"]],
+    ["", ["Vitals (၃)", "Flap စစ် (၃)", "ကိုယ်လှည့်"]],
+    ["", ["DTX — အစာမကျွေးမီ"]],
+    ["အစာ ၅ — စွပ်ပြုတ် 250 ml", ["ရေ 40 / 40 ml", "ဗိုက်ပွ / Residual စစ်", "ညနေဆေးများ"]],
+    ["", ["ပါးစပ်သန့်ရှင်းရေး (၃)", "Stoma စစ်", "လည်ပင်းကြိုး စစ်", "HME Filter လဲ (ညစ်ပေလျှင်)"]],
+    ["", ["Nebulizer (၄) → Suction", "ကိုယ်လှည့်"]],
+    ["", ["Vitals (၄)", "DTX — အိပ်ရာဝင်"]],
+    ["အစာ ၆ — Gen-DM MF 250 ml", ["ရေ 40 / 40 ml", "ဗိုက်ပွ / Residual စစ်", "ခေါင်း 30–45°"]],
+    ["", ["ပိုက်အဖုံးပိတ်", "ခေါင်း 30° ထား၍ ညအစောင့် စတင်"]]
+  ],
+  en: [
+    ["", ["Vitals (BP, HR, SpO2, temperature)", "DTX — before feeding", "Nebulizer → suction if needed", "Clean inner cannula", "Mouth care", "(Once a week) weigh"]],
+    ["Feed 1 — Neo-Mune 250 ml", ["Water 40 ml before / 40 ml after", "Check bloating / residual", "Head up 30–45°", "Morning medicines"]],
+    ["", ["Keep head raised (45–60 min)", "Turn patient"]],
+    ["", ["DTX — first week only", "Check flap (1)", "Clean stoma, change gauze", "Sponge bath"]],
+    ["", ["Exercise (1) 10–15 min — only if vitals stable"]],
+    ["Feed 2 — Gen-DM MF 250 ml", ["Water 40 / 40 ml", "Check bloating / residual", "Head up 30–45°"]],
+    ["Water 50–100 ml if needed", ["Turn patient", "Rest"]],
+    ["", ["Vitals (2)", "Nebulizer (2) → suction"]],
+    ["", ["DTX — before feeding"]],
+    ["Feed 3 — Soup 250 ml", ["Water 40 / 40 ml", "Check bloating / residual", "Head up 30–45°"]],
+    ["", ["Mouth care (2)", "Turn patient", "Check flap (2)"]],
+    ["", ["Exercise (2) — sit at bed edge / walk with help"]],
+    ["Feed 4 — Neo-Mune 250 ml", ["Water 40 / 40 ml", "Check bloating / residual", "Head up 30–45°"]],
+    ["", ["Nebulizer (3) → suction", "Clean inner cannula (2)"]],
+    ["", ["Vitals (3)", "Check flap (3)", "Turn patient"]],
+    ["", ["DTX — before feeding"]],
+    ["Feed 5 — Soup 250 ml", ["Water 40 / 40 ml", "Check bloating / residual", "Evening medicines"]],
+    ["", ["Mouth care (3)", "Check stoma", "Check trach ties", "Change HME filter (if dirty)"]],
+    ["", ["Nebulizer (4) → suction", "Turn patient"]],
+    ["", ["Vitals (4)", "DTX — bedtime"]],
+    ["Feed 6 — Gen-DM MF 250 ml", ["Water 40 / 40 ml", "Check bloating / residual", "Head up 30–45°"]],
+    ["", ["Cap the tube", "Head at 30°, start overnight watch"]]
+  ],
+  th: [
+    ["", ["วัดสัญญาณชีพ (ความดัน ชีพจร SpO2 อุณหภูมิ)", "ตรวจน้ำตาล — ก่อนให้อาหาร", "พ่นยา → ดูดเสมหะถ้าจำเป็น", "ล้างท่อด้านใน", "ทำความสะอาดช่องปาก", "(สัปดาห์ละครั้ง) ชั่งน้ำหนัก"]],
+    ["มื้อ 1 — Neo-Mune 250 มล.", ["น้ำ 40 มล. ก่อน / 40 มล. หลัง", "ตรวจท้องอืด / อาหารค้าง", "ยกหัว 30–45°", "ยาเช้า"]],
+    ["", ["ยกหัวสูงไว้ (45–60 นาที)", "พลิกตัว"]],
+    ["", ["ตรวจน้ำตาล — สัปดาห์แรกเท่านั้น", "ตรวจแผล Flap (1)", "ทำความสะอาดรูเจาะคอ เปลี่ยนผ้าก๊อซ", "เช็ดตัว"]],
+    ["", ["ออกกำลัง (1) 10–15 นาที — เมื่อสัญญาณชีพคงที่"]],
+    ["มื้อ 2 — Gen-DM MF 250 มล.", ["น้ำ 40 / 40 มล.", "ตรวจท้องอืด / อาหารค้าง", "ยกหัว 30–45°"]],
+    ["น้ำ 50–100 มล. ถ้าจำเป็น", ["พลิกตัว", "พักผ่อน"]],
+    ["", ["วัดสัญญาณชีพ (2)", "พ่นยา (2) → ดูดเสมหะ"]],
+    ["", ["ตรวจน้ำตาล — ก่อนให้อาหาร"]],
+    ["มื้อ 3 — ซุป 250 มล.", ["น้ำ 40 / 40 มล.", "ตรวจท้องอืด / อาหารค้าง", "ยกหัว 30–45°"]],
+    ["", ["ทำความสะอาดช่องปาก (2)", "พลิกตัว", "ตรวจแผล Flap (2)"]],
+    ["", ["ออกกำลัง (2) — นั่งขอบเตียง / เดินโดยมีคนช่วย"]],
+    ["มื้อ 4 — Neo-Mune 250 มล.", ["น้ำ 40 / 40 มล.", "ตรวจท้องอืด / อาหารค้าง", "ยกหัว 30–45°"]],
+    ["", ["พ่นยา (3) → ดูดเสมหะ", "ล้างท่อด้านใน (2)"]],
+    ["", ["วัดสัญญาณชีพ (3)", "ตรวจแผล Flap (3)", "พลิกตัว"]],
+    ["", ["ตรวจน้ำตาล — ก่อนให้อาหาร"]],
+    ["มื้อ 5 — ซุป 250 มล.", ["น้ำ 40 / 40 มล.", "ตรวจท้องอืด / อาหารค้าง", "ยาเย็น"]],
+    ["", ["ทำความสะอาดช่องปาก (3)", "ตรวจรูเจาะคอ", "ตรวจสายผูกท่อ", "เปลี่ยนตัวกรอง HME (ถ้าสกปรก)"]],
+    ["", ["พ่นยา (4) → ดูดเสมหะ", "พลิกตัว"]],
+    ["", ["วัดสัญญาณชีพ (4)", "ตรวจน้ำตาล — ก่อนนอน"]],
+    ["มื้อ 6 — Gen-DM MF 250 มล.", ["น้ำ 40 / 40 มล.", "ตรวจท้องอืด / อาหารค้าง", "ยกหัว 30–45°"]],
+    ["", ["ปิดฝาสาย", "ยกหัว 30° เริ่มเฝ้ากลางคืน"]]
+  ]
+};
+
+const LANGS = ["my","en","th"];
+let lang = store.get("lang", "my"); if (!UI[lang]) lang = "my";
+const today = () => { const d = new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); };
+let done = store.get("done", {});
+if (done.day !== today()) done = { day: today(), items: [] };
+const toMin = t => { const [h,m] = t.split(":").map(Number); return h*60+m; };
+
+function renderSlots(){
+  LANGS.forEach(l => {
+    const box = document.querySelector('.L[data-l="'+l+'"] .slots');
+    if (!box) return;
+    box.innerHTML = "";
+    TIMES.forEach((t, i) => {
+      const [feed, tasks] = SLOTS[l][i];
+      const isDone = done.items.includes(t);
+      const c = document.createElement("div");
+      c.className = "card" + (isDone ? " done" : ""); c.dataset.t = t;
+      c.innerHTML =
+        '<div class="row"><div class="time">'+t+'<span class="nowtag"></span></div><div>' +
+        (feed ? '<div class="feed">🍲 '+feed+'</div>' : '') +
+        '<ul class="tasks">'+tasks.map(x=>'<li>'+x+'</li>').join("")+'</ul></div></div>' +
+        '<button class="tick">'+(isDone ? UI[l].done : UI[l].tick)+'</button>';
+      c.querySelector(".tick").onclick = () => {
+        const k = done.items.indexOf(t);
+        if (k >= 0) done.items.splice(k,1); else done.items.push(t);
+        store.set("done", done); renderSlots(); markNow(false);
+      };
+      box.appendChild(c);
+    });
+  });
+}
+
+function markNow(scroll){
+  const d = new Date(); const now = d.getHours()*60 + d.getMinutes();
+  document.getElementById("clock").textContent =
+    String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+  if (done.day !== today()){ done = { day: today(), items: [] }; store.set("done", done); renderSlots(); }
+  let idx = -1;
+  TIMES.forEach((t, i) => { if (toMin(t) <= now) idx = i; });
+  LANGS.forEach(l => {
+    const cards = document.querySelectorAll('.L[data-l="'+l+'"] .slots .card');
+    cards.forEach(c => { c.classList.remove("now"); c.querySelector(".nowtag").innerHTML = ""; });
+    if (idx >= 0 && now < toMin("22:30") + 30 && cards[idx]){
+      cards[idx].classList.add("now");
+      cards[idx].querySelector(".nowtag").innerHTML = '<br><span class="badge">'+UI[l].now+'</span>';
+      if (scroll && l === lang && document.getElementById("schedule").classList.contains("on"))
+        cards[idx].scrollIntoView({ block: "center" });
+    }
+  });
+}
+
+function setLang(l){
+  lang = l; store.set("lang", l);
+  document.body.classList.remove("l-my","l-en","l-th");
+  document.body.classList.add("l-"+l);
+  document.documentElement.lang = l;
+  document.getElementById("ttl").textContent = UI[l].title;
+  document.title = UI[l].title;
+  document.querySelectorAll(".nl").forEach(s => s.textContent = UI[l].nav[s.dataset.k]);
+  document.querySelectorAll("#langbar button").forEach(b => b.classList.toggle("on", b.dataset.lang === l));
+}
+document.querySelectorAll("#langbar button").forEach(b => b.onclick = () => { setLang(b.dataset.lang); markNow(true); });
+
+function show(tab){
+  document.querySelectorAll("section").forEach(s => s.classList.toggle("on", s.id === tab));
+  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("on", b.dataset.tab === tab));
+  window.scrollTo(0,0);
+  if (tab === "schedule") markNow(true);
+}
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => show(b.dataset.tab));
+
+let fs = store.get("fs", 20);
+const applyFs = () => document.documentElement.style.setProperty("--fs", fs+"px");
+document.getElementById("fsUp").onclick = () => { fs = Math.min(30, fs+2); applyFs(); store.set("fs", fs); };
+document.getElementById("fsDown").onclick = () => { fs = Math.max(16, fs-2); applyFs(); store.set("fs", fs); };
+
+const ph = store.get("phones", {});
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+LANGS.forEach(l => {
+  const box = document.querySelector('.L[data-l="'+l+'"] .phones');
+  if (!box) return;
+  box.innerHTML = UI[l].phones.map((n,i) =>
+    '<div class="phone"><span>'+n+'</span><input inputmode="tel" data-i="'+i+'" value="'+esc(ph[i]||"")+'" placeholder="______"></div>').join("");
+});
+document.querySelectorAll(".phones input").forEach(inp => inp.oninput = () => {
+  ph[inp.dataset.i] = inp.value; store.set("phones", ph);
+  document.querySelectorAll('.phones input[data-i="'+inp.dataset.i+'"]').forEach(o => { if (o !== inp) o.value = inp.value; });
+});
+
+applyFs();
+setLang(lang);
+renderSlots();
+show("schedule");
+setInterval(() => markNow(false), 30000);
+
+</script>
+</body>
+</html>
